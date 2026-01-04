@@ -17,7 +17,7 @@ export const TermsOfService: React.FC = () => {
                 </div>
 
                 <p className="text-muted-foreground mb-8">
-                    Last Updated: {new Date().toLocaleDateString()}
+                    Last Updated: January 4, 2026
                 </p>
 
                 <div className="prose prose-invert max-w-none space-y-6">

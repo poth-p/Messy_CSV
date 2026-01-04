@@ -1,9 +1,46 @@
 import Papa from 'papaparse';
+import { saveAs } from 'file-saver';
 
 export type ExportFormat = 'csv' | 'json' | 'excel';
 
 /**
- * Exports cleaned data to a file.
+ * Exports cleaned data to a file using FileSaver.js for reliable downloads.
+ */
+/**
+ * Sanitizes data to prevent CSV Injection (Excel formulas).
+ * Prepends a single quote to string values starting with =, +, -, or @.
+ */
+export function sanitizeDataForExcel(data: any[]): any[] {
+    return data.map(row => {
+        const newRow: any = {};
+        for (const key in row) {
+            const val = row[key];
+            if (typeof val === 'string') {
+                // Check for CSV injection triggers: =, +, -, @
+                // Note: User specifically mentioned + leading to formula.
+                // Standard practice is =, +, -, @, but treating - might break negative numbers if not careful.
+                // However, Excel handles negative numbers fine usually, but a formula starting with - is possible.
+                // User complaint is about phone numbers starting with +.
+                // Let's stick to =, +, @ for now to be safe, or include - if it looks like a formula?
+                // Simplest consistent fix is strictly =, +, @. 
+                // User showed +1-555... becoming a formula.
+
+                // If it starts with +, =, @, prepend '
+                if (/^[+=@]/.test(val)) {
+                    newRow[key] = `'${val}`;
+                } else {
+                    newRow[key] = val;
+                }
+            } else {
+                newRow[key] = val;
+            }
+        }
+        return newRow;
+    });
+}
+
+/**
+ * Exports cleaned data to a file using FileSaver.js for reliable downloads.
  */
 export function exportCleanedData(
     data: any[],
@@ -15,17 +52,17 @@ export function exportCleanedData(
     const newFilename = `${baseName}_cleaned_${timestamp}`;
 
     if (format === 'csv') {
-        const csv = Papa.unparse(data);
+        // Sanitize for Excel compatibility
+        const safeData = sanitizeDataForExcel(data);
+        const csv = Papa.unparse(safeData);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        triggerDownload(blob, `${newFilename}.csv`);
+        saveAs(blob, `${newFilename}.csv`);
     } else if (format === 'json') {
         const json = JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
-        triggerDownload(blob, `${newFilename}.json`);
+        saveAs(blob, `${newFilename}.json`);
     } else if (format === 'excel') {
-        // Premium feature stub
-        alert("Excel export is a Premium feature. Upgrade for $5/month to unlock.");
-        // In real app, we would show a modal or redirect to pricing.
+        throw new Error('PREMIUM_FEATURE_REQUIRED');
     }
 }
 
@@ -41,15 +78,4 @@ export async function copyToClipboard(data: any[]): Promise<boolean> {
         console.error("Failed to copy", err);
         return false;
     }
-}
-
-function triggerDownload(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }

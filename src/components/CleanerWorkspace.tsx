@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { CSVCleaner } from '../lib/csv-cleaner';
 import type { CleaningOptions, CleaningResult } from '../lib/csv-cleaner';
 import type { FileMetadata } from './CSVUploader';
+import { exportCleanedData, copyToClipboard } from '../lib/export-utils';
+import { useFeatureAccess } from '../hooks/useFeatureAccess';
+import { UpgradeModal } from './UpgradeModal';
 import { ArrowLeft, Play, Download, Trash2, Calendar, Scissors, AlertCircle, RefreshCw, Copy, FileJson, FileSpreadsheet } from 'lucide-react';
 
 interface CleanerWorkspaceProps {
@@ -16,14 +20,21 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
         removeDuplicates: false,
         trimWhitespace: false,
         dateColumns: [],
+        dateFormat: 'YYYY-MM-DD',
         missingValues: {
             strategy: 'flag', // default
             fillValue: ''
         }
     });
 
+    const [customDateFormat, setCustomDateFormat] = useState('');
+
     const [previewResult, setPreviewResult] = useState<CleaningResult | null>(null);
     const [isCleaning, setIsCleaning] = useState(false);
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const { canExportExcel, isPremium } = useFeatureAccess();
 
     // Suggest date columns on mount
     useEffect(() => {
@@ -52,12 +63,19 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
     // Run Cleaning
     const runPreview = () => {
         setIsCleaning(true);
-        // Use setTimeout to allow UI to render spinner if dataset is large, 
-        // though 10MB is fast.
+        setError(null);
+        // Use setTimeout to allow UI to render spinner if dataset is large
         setTimeout(() => {
-            const result = CSVCleaner.cleanAll(data, options);
-            setPreviewResult(result);
-            setIsCleaning(false);
+            try {
+                const result = CSVCleaner.cleanAll(data, options);
+                setPreviewResult(result);
+            } catch (err: any) {
+                console.error("Cleaning failed:", err);
+                setError(err.message || "An error occurred during cleaning");
+                setPreviewResult(null);
+            } finally {
+                setIsCleaning(false);
+            }
         }, 100);
     };
 
@@ -67,13 +85,28 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
 
     const handleDownload = (format: 'csv' | 'json' | 'excel') => {
         if (!previewResult) return;
-        exportCleanedData(previewResult.data, metadata.name, format);
+
+        if (format === 'excel' && !canExportExcel) {
+            // Fallback helper if validation fails early, though export-utils throws too
+            setIsUpgradeModalOpen(true);
+            return;
+        }
+
+        try {
+            exportCleanedData(previewResult.data, metadata.name, format);
+        } catch (err: any) {
+            if (err.message === 'PREMIUM_FEATURE_REQUIRED') {
+                setIsUpgradeModalOpen(true);
+            } else {
+                toast.error(`Export failed: ${err.message}`);
+            }
+        }
     };
 
     const handleCopy = async () => {
         if (!previewResult) return;
         await copyToClipboard(previewResult.data);
-        alert("Copied cleaned CSV to clipboard!");
+        toast.success("Copied cleaned CSV to clipboard!");
     };
 
     return (
@@ -143,11 +176,11 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                             <Calendar className="w-4 h-4 text-blue-400" /> Standardize Dates
                         </label>
                         <p className="text-xs text-muted-foreground mb-2">
-                            Convert to YYYY-MM-DD format. Select columns:
+                            Select columns to clean:
                         </p>
                         <select
                             multiple
-                            className="w-full bg-secondary/50 border border-border rounded-md p-2 text-sm h-32"
+                            className="w-full bg-background border border-border rounded-md p-2 text-sm h-32"
                             value={options.dateColumns}
                             onChange={(e) => {
                                 const selected = Array.from(e.target.selectedOptions, option => option.value);
@@ -158,9 +191,52 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                                 <option key={col} value={col}>{col}</option>
                             ))}
                         </select>
-                        <p className="text-xs text-muted-foreground italic">
+                        <p className="text-xs text-muted-foreground italic mb-3">
                             Hold Ctrl/Cmd to select multiple.
                         </p>
+
+                        {/* Date Format Selection */}
+                        <label className="text-sm font-medium">Output Format:</label>
+                        <select
+                            className="w-full bg-background border border-border rounded-md p-2 text-sm"
+                            value={options.dateFormat === 'custom' || (!['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'].includes(options.dateFormat || '')) ? 'custom' : options.dateFormat}
+                            onChange={(e) => {
+                                if (e.target.value === 'custom') {
+                                    setOptions(prev => ({ ...prev, dateFormat: customDateFormat || 'YYYY-MM-DD' }));
+                                } else {
+                                    setOptions(prev => ({ ...prev, dateFormat: e.target.value }));
+                                    setCustomDateFormat('');
+                                }
+                            }}
+                        >
+                            <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY (European)</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                            <option value="YYYY/MM/DD">YYYY/MM/DD</option>
+                            {isPremium && <option value="custom">Custom Format...</option>}
+                        </select>
+
+                        {/* Custom Format Input (Premium) */}
+                        {isPremium && (options.dateFormat === 'custom' || !['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'].includes(options.dateFormat || '')) && (
+                            <div className="mt-2">
+                                <label className="text-xs text-muted-foreground mb-1 block">
+                                    Custom format (e.g. DD-MM-YYYY):
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-background border border-border rounded-md p-2 text-sm"
+                                    placeholder="DD-MM-YYYY"
+                                    value={customDateFormat || options.dateFormat}
+                                    onChange={(e) => {
+                                        setCustomDateFormat(e.target.value);
+                                        setOptions(prev => ({ ...prev, dateFormat: e.target.value }));
+                                    }}
+                                />
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                    Use YYYY, MM, DD with any separator
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <hr className="border-border/50" />
@@ -227,14 +303,39 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                     </button>
                     <div className="grid grid-cols-2 gap-2">
                         <button
-                            onClick={() => handleDownload('csv')}
+                            onClick={() => {
+                                if (!previewResult) return;
+                                try {
+                                    exportCleanedData(previewResult.data, metadata.name, 'csv');
+                                } catch (err: any) {
+                                    alert(`Export failed: ${err.message}`);
+                                }
+                            }}
                             disabled={!previewResult}
                             className="py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                         >
                             <Download className="w-4 h-4" /> Download CSV
                         </button>
                         <button
-                            onClick={() => handleDownload('json')}
+                            onClick={() => {
+                                if (!previewResult) return;
+
+                                // Generate JSON inline
+                                const json = JSON.stringify(previewResult.data, null, 2);
+                                const blob = new Blob([json], { type: 'application/json' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                const baseName = metadata.name.replace(/\.(csv|txt)$/i, '');
+                                const timestamp = new Date().toISOString().split('T')[0];
+                                a.href = url;
+                                a.download = `${baseName}_cleaned_${timestamp}.json`;
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 100);
+                            }}
                             disabled={!previewResult}
                             className="py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                         >
@@ -301,6 +402,22 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                     </div>
                 )}
 
+                {error && (
+                    <div className="bg-red-50 border-b border-red-200 p-4 animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-2 text-red-800">
+                            <AlertCircle className="w-5 h-5" />
+                            <span className="font-medium">Cleaning Failed</span>
+                        </div>
+                        <p className="text-sm text-red-700 mt-1">{error}</p>
+                        <button
+                            onClick={() => setError(null)}
+                            className="text-sm text-red-600 underline mt-2"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
+
                 {/* Preview Area */}
                 <div className="flex-1 overflow-auto p-8">
                     {!previewResult ? (
@@ -343,6 +460,12 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                         </div>
                     )}
                 </div>
+
+                <UpgradeModal
+                    isOpen={isUpgradeModalOpen}
+                    onClose={() => setIsUpgradeModalOpen(false)}
+                    reason="excel"
+                />
             </main>
         </div>
     );

@@ -7,6 +7,7 @@ export interface CleaningOptions {
     removeDuplicates: boolean;
     trimWhitespace: boolean;
     dateColumns: string[];
+    dateFormat?: string; // Target format: 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD', or custom
     missingValues: {
         strategy: 'flag' | 'remove' | 'fill';
         fillValue?: string;
@@ -79,14 +80,10 @@ export class CSVCleaner {
     }
 
     /**
-     * Standardize dates to YYYY-MM-DD format.
-     * Conversion strategy:
-     * - YYYY-MM-DD -> Keep
-     * - MM/DD/YYYY -> Convert
-     * - DD-MM-YYYY -> Convert (if detectable)
-     * - YYYY/MM/DD -> Convert
+     * Standardize dates to target format (default: YYYY-MM-DD).
+     * Supports DD/MM/YYYY, MM/DD/YYYY, YYYY/MM/DD, or custom format
      */
-    static standardizeDates(data: any[], dateColumns: string[]): { data: any[], fixedCount: number } {
+    static standardizeDates(data: any[], dateColumns: string[], targetFormat: string = 'YYYY-MM-DD'): { data: any[], fixedCount: number } {
         let fixedCount = 0;
 
         const cleanedData = data.map(row => {
@@ -97,7 +94,7 @@ export class CSVCleaner {
                     if (!val) continue;
 
                     const dateStr = String(val).trim();
-                    const cleanDate = this.parseDate(dateStr);
+                    const cleanDate = this.parseDate(dateStr, targetFormat);
 
                     if (cleanDate) {
                         if (cleanDate !== val) {
@@ -119,9 +116,9 @@ export class CSVCleaner {
     }
 
     /**
-     * Helper to parse various date formats into YYYY-MM-DD
+     * Helper to parse various date formats into target format
      */
-    private static parseDate(dateStr: string): string | null {
+    private static parseDate(dateStr: string, targetFormat: string = 'YYYY-MM-DD'): string | null {
         // Already ISO? YYYY-MM-DD
         if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
 
@@ -133,7 +130,7 @@ export class CSVCleaner {
             year = parseInt(ymdSlash[1]);
             month = parseInt(ymdSlash[2]);
             day = parseInt(ymdSlash[3]);
-            return this.formatISO(year, month, day);
+            return this.formatDate(year, month, day, targetFormat);
         }
 
         // Try MM/DD/YYYY (US)
@@ -142,37 +139,52 @@ export class CSVCleaner {
             year = parseInt(mdySlash[3]);
             month = parseInt(mdySlash[1]);
             day = parseInt(mdySlash[2]);
-            return this.formatISO(year, month, day);
+            return this.formatDate(year, month, day, targetFormat);
         }
 
-        // Try DD-MM-YYYY (Euro/ISO alternative)
-        const dmyDash = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
-        if (dmyDash) {
-            year = parseInt(dmyDash[3]);
-            month = parseInt(dmyDash[2]);
-            day = parseInt(dmyDash[1]);
-            return this.formatISO(year, month, day);
+        // Try DD-MM-YYYY or DD/MM/YYYY (Euro)
+        const dmySlash = dateStr.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+        if (dmySlash) {
+            year = parseInt(dmySlash[3]);
+            month = parseInt(dmySlash[2]);
+            day = parseInt(dmySlash[1]);
+            return this.formatDate(year, month, day, targetFormat);
         }
 
         // Try other common weak parsers if strict regex fails
         const timestamp = Date.parse(dateStr);
         if (!isNaN(timestamp)) {
             const d = new Date(timestamp);
-            return d.toISOString().split('T')[0];
+            year = d.getFullYear();
+            month = d.getMonth() + 1;
+            day = d.getDate();
+            return this.formatDate(year, month, day, targetFormat);
         }
 
         return null;
     }
 
-    private static formatISO(year: number, month: number, day: number): string | null {
+    private static formatDate(year: number, month: number, day: number, format: string = 'YYYY-MM-DD'): string | null {
         // Basic validation
         if (month < 1 || month > 12) return null;
-        if (day < 1 || day > 31) return null; // Simplified logic
+        if (day < 1 || day > 31) return null;
 
         const y = year.toString().padStart(4, '0');
         const m = month.toString().padStart(2, '0');
         const d = day.toString().padStart(2, '0');
-        return `${y}-${m}-${d}`;
+
+        // Support common formats
+        switch (format) {
+            case 'DD/MM/YYYY':
+                return `${d}/${m}/${y}`;
+            case 'MM/DD/YYYY':
+                return `${m}/${d}/${y}`;
+            case 'YYYY/MM/DD':
+                return `${y}/${m}/${d}`;
+            case 'YYYY-MM-DD':
+            default:
+                return `${y}-${m}-${d}`;
+        }
     }
 
     /**
@@ -242,7 +254,7 @@ export class CSVCleaner {
 
         // 3. Standardize Dates
         if (options.dateColumns.length > 0) {
-            const res = this.standardizeDates(processedData, options.dateColumns);
+            const res = this.standardizeDates(processedData, options.dateColumns, options.dateFormat || 'YYYY-MM-DD');
             processedData = res.data;
             stats.datesFixed = res.fixedCount;
         }

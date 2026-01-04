@@ -1,0 +1,5 @@
+ Volume in drive C is Flash
+ Volume Serial Number is 9E41-E1D2
+
+ Directory of C:\Work_synced\Automatization\Antigravity\Messy_CSV\src
+

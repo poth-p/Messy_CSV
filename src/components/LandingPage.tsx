@@ -1,7 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { CSVUploader } from './CSVUploader';
 import type { FileMetadata } from './CSVUploader';
-import { Upload, FileSpreadsheet, Shield, Zap, Trash2, Calendar, Scissors, AlertCircle } from 'lucide-react';
+import { FileSpreadsheet, Shield, Zap, Trash2, Calendar, Scissors, AlertCircle, Layers } from 'lucide-react';
 
 interface LandingPageProps {
     onDataparsed: (data: any[], meta: FileMetadata) => void;
@@ -20,7 +21,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
                     <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
                         <a href="#features" className="hover:text-foreground transition-colors">Features</a>
                         <a href="#privacy" className="hover:text-foreground transition-colors">Privacy</a>
-                        <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+                        <a href="https://github.com/poth-p/Messy_CSV" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
                     </nav>
                 </div>
             </header>
@@ -43,10 +44,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
                         </p>
 
                         <div className="grid gap-4 w-full max-w-md mx-auto">
-                            <button className="h-12 px-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2">
-                                Start Cleaning Now
-                                <Upload className="w-4 h-4" />
-                            </button>
+                            <Link to="/batch" className="h-12 px-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2">
+                                <Layers className="w-4 h-4" />
+                                Batch Process Files (Premium)
+                            </Link>
                         </div>
 
                         {/* Instant Demo Placeholder */}
@@ -122,14 +123,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
 
             <footer className="py-8 border-t border-border bg-background">
                 <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-                    <p>© 2024 Messy CSV Cleaner. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} Messy CSV Cleaner. All rights reserved.</p>
                     <div className="flex gap-6 mt-4 md:mt-0">
-                        <a href="/privacy" className="hover:text-foreground transition-colors">
+                        <Link to="/privacy" className="hover:text-foreground transition-colors">
                             Privacy Policy
-                        </a>
-                        <a href="/terms" className="hover:text-foreground transition-colors">
+                        </Link>
+                        <Link to="/terms" className="hover:text-foreground transition-colors">
                             Terms of Service
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </footer>
