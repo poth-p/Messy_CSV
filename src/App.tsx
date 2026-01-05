@@ -42,7 +42,7 @@ function AppContent() {
       <Routes>
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/batch" element={
+        <Route path="/advanced" element={
           <ErrorBoundary>
             <BatchPage />
           </ErrorBoundary>

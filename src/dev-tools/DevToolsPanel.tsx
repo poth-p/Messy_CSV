@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, Trash2, Crown, User } from 'lucide-react';
-import { useUserTier } from '../lib/UserTierContext';
+import { Settings, Trash2, Layers, FileSpreadsheet } from 'lucide-react';
+import { useAppMode } from '../lib/UserTierContext';
 
 export const DevToolsPanel: React.FC = () => {
-    const { tier, setTier } = useUserTier();
+    const { mode, setMode } = useAppMode();
     const [isOpen, setIsOpen] = useState(false);
 
     // Only show in development
@@ -14,9 +14,9 @@ export const DevToolsPanel: React.FC = () => {
         window.location.reload();
     };
 
-    const toggleTier = () => {
-        const newTier = tier === 'free' ? 'premium' : 'free';
-        setTier(newTier);
+    const toggleMode = () => {
+        const newMode = mode === 'simple' ? 'advanced' : 'simple';
+        setMode(newMode);
     };
 
     return (
@@ -47,33 +47,33 @@ export const DevToolsPanel: React.FC = () => {
                     </div>
 
                     <div className="space-y-3">
-                        {/* Current Tier Display */}
+                        {/* Current Mode Display */}
                         <div className="bg-secondary/50 rounded-lg p-3">
-                            <div className="text-xs text-muted-foreground mb-1">Current Tier</div>
+                            <div className="text-xs text-muted-foreground mb-1">Current Mode</div>
                             <div className="flex items-center gap-2">
-                                {tier === 'premium' ? (
-                                    <Crown className="w-5 h-5 text-yellow-500" />
+                                {mode === 'advanced' ? (
+                                    <Layers className="w-5 h-5 text-primary" />
                                 ) : (
-                                    <User className="w-5 h-5 text-muted-foreground" />
+                                    <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />
                                 )}
-                                <span className="font-bold capitalize">{tier}</span>
+                                <span className="font-bold capitalize">{mode}</span>
                             </div>
                         </div>
 
-                        {/* Toggle Tier */}
+                        {/* Toggle Mode */}
                         <button
-                            onClick={toggleTier}
+                            onClick={toggleMode}
                             className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                         >
-                            {tier === 'free' ? (
+                            {mode === 'simple' ? (
                                 <>
-                                    <Crown className="w-4 h-4" />
-                                    Set to Premium
+                                    <Layers className="w-4 h-4" />
+                                    Switch to Advanced
                                 </>
                             ) : (
                                 <>
-                                    <User className="w-4 h-4" />
-                                    Set to Free
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    Switch to Simple
                                 </>
                             )}
                         </button>

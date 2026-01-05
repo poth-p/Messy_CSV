@@ -1,65 +1,41 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-export type UserTier = 'free' | 'premium';
+export type AppMode = 'simple' | 'advanced';
 
-interface UserTierContextType {
-    tier: UserTier;
-    setTier: (tier: UserTier) => void;
-    isPremium: boolean;
-    setUserEmail: (email: string | null) => void;
+interface AppModeContextType {
+    mode: AppMode;
+    setMode: (mode: AppMode) => void;
+    isAdvancedMode: boolean;
 }
 
-const UserTierContext = createContext<UserTierContextType | undefined>(undefined);
+const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
 
-export const UserTierProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [tier, setTierState] = useState<UserTier>(() => {
-        const saved = localStorage.getItem('userTier');
-        return (saved as UserTier) || 'free';
+export const AppModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [mode, setModeState] = useState<AppMode>(() => {
+        const saved = localStorage.getItem('appMode');
+        return (saved as AppMode) || 'simple';
     });
 
-    const [userEmail, setUserEmail] = useState<string | null>(() => {
-        return localStorage.getItem('userEmail');
-    });
-
-    useEffect(() => {
-        const checkStatus = async () => {
-            if (!userEmail) return;
-
-            try {
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-                const response = await fetch(`${API_URL}/api/user-status/${userEmail}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error: ${response.status}`);
-                }
-                const { tier: serverTier } = await response.json();
-                if (serverTier && serverTier !== tier) {
-                    setTierState(serverTier);
-                    localStorage.setItem('userTier', serverTier);
-                }
-            } catch (err) {
-                console.error("Failed to check user status:", err);
-            }
-        };
-
-        checkStatus();
-    }, [userEmail]);
-
-    const setTier = (newTier: UserTier) => {
-        setTierState(newTier);
-        localStorage.setItem('userTier', newTier);
+    const setMode = (newMode: AppMode) => {
+        setModeState(newMode);
+        localStorage.setItem('appMode', newMode);
     };
 
     return (
-        <UserTierContext.Provider value={{ tier, setTier, isPremium: tier === 'premium', setUserEmail }}>
+        <AppModeContext.Provider value={{ mode, setMode, isAdvancedMode: mode === 'advanced' }}>
             {children}
-        </UserTierContext.Provider>
+        </AppModeContext.Provider>
     );
 };
 
-export const useUserTier = () => {
-    const context = useContext(UserTierContext);
+export const useAppMode = () => {
+    const context = useContext(AppModeContext);
     if (context === undefined) {
-        throw new Error('useUserTier must be used within a UserTierProvider');
+        throw new Error('useAppMode must be used within an AppModeProvider');
     }
     return context;
 };
+
+// Legacy alias for backwards compatibility during refactoring
+export const useUserTier = useAppMode;
+export const UserTierProvider = AppModeProvider;

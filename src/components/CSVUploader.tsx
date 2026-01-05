@@ -4,8 +4,6 @@ import Papa from 'papaparse';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useFeatureAccess } from '../hooks/useFeatureAccess';
-import { UpgradeModal } from './UpgradeModal';
 
 // Utility for Tailwind classes
 export function cn(...inputs: (string | undefined | null | false)[]) {
@@ -30,20 +28,12 @@ export const CSVUploader: React.FC<CSVUploaderProps> = ({ onDataparsed }) => {
     const [metadata, setMetadata] = useState<FileMetadata | null>(null);
     const [isParsing, setIsParsing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-
-    const { checkFileSize } = useFeatureAccess();
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const selectedFile = acceptedFiles[0];
         if (!selectedFile) return;
 
-        if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
-            if (!checkFileSize(selectedFile.size)) {
-                setIsUpgradeModalOpen(true);
-                return;
-            }
-        }
+        // No file size restrictions anymore - all files are allowed
 
         setFile(selectedFile);
         setIsParsing(true);
@@ -250,12 +240,6 @@ export const CSVUploader: React.FC<CSVUploaderProps> = ({ onDataparsed }) => {
                     </div>
                 </div>
             )}
-
-            <UpgradeModal
-                isOpen={isUpgradeModalOpen}
-                onClose={() => setIsUpgradeModalOpen(false)}
-                reason="file-size"
-            />
         </div>
     );
 };

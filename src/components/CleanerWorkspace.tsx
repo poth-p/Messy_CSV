@@ -5,7 +5,7 @@ import type { CleaningOptions, CleaningResult } from '../lib/csv-cleaner';
 import type { FileMetadata } from './CSVUploader';
 import { exportCleanedData, copyToClipboard } from '../lib/export-utils';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
-import { UpgradeModal } from './UpgradeModal';
+import { AdvancedModeModal } from './AdvancedModeModal';
 import { ArrowLeft, Play, Download, Trash2, Calendar, Scissors, AlertCircle, RefreshCw, Copy, FileJson, FileSpreadsheet } from 'lucide-react';
 
 interface CleanerWorkspaceProps {
@@ -34,7 +34,7 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const { canExportExcel, isPremium } = useFeatureAccess();
+    const { canExportExcel, isAdvancedMode } = useFeatureAccess();
 
     // Suggest date columns on mount
     useEffect(() => {
@@ -213,11 +213,11 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                             <option value="DD/MM/YYYY">DD/MM/YYYY (European)</option>
                             <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
                             <option value="YYYY/MM/DD">YYYY/MM/DD</option>
-                            {isPremium && <option value="custom">Custom Format...</option>}
+                            {isAdvancedMode && <option value="custom">Custom Format...</option>}
                         </select>
 
                         {/* Custom Format Input (Premium) */}
-                        {isPremium && (options.dateFormat === 'custom' || !['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'].includes(options.dateFormat || '')) && (
+                        {isAdvancedMode && (options.dateFormat === 'custom' || !['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY/MM/DD'].includes(options.dateFormat || '')) && (
                             <div className="mt-2">
                                 <label className="text-xs text-muted-foreground mb-1 block">
                                     Custom format (e.g. DD-MM-YYYY):
@@ -356,7 +356,7 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                             disabled={!previewResult}
                             className="py-2 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 hover:from-emerald-500/20 text-emerald-600 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-xs border border-emerald-500/20"
                         >
-                            <FileSpreadsheet className="w-3 h-3" /> Excel (Pro)
+                            <FileSpreadsheet className="w-3 h-3" /> Excel {!isAdvancedMode && '(Adv)'}
                         </button>
                     </div>
                 </div>
@@ -461,10 +461,10 @@ export const CleanerWorkspace: React.FC<CleanerWorkspaceProps> = ({ data, metada
                     )}
                 </div>
 
-                <UpgradeModal
+                <AdvancedModeModal
                     isOpen={isUpgradeModalOpen}
                     onClose={() => setIsUpgradeModalOpen(false)}
-                    reason="excel"
+                    feature="excel"
                 />
             </main>
         </div>

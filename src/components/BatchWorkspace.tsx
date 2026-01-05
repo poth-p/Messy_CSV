@@ -20,7 +20,7 @@ export const BatchWorkspace: React.FC<BatchWorkspaceProps> = ({ files, onBack })
     const [selectedFileId, setSelectedFileId] = useState<string | null>(files[0]?.id || null);
     const [customDateFormats, setCustomDateFormats] = useState<Record<string, string>>({});
 
-    const { isPremium } = useFeatureAccess();
+    const { isAdvancedMode } = useFeatureAccess();
 
     const startBatchProcessing = async () => {
         setIsProcessing(true);
@@ -165,11 +165,11 @@ export const BatchWorkspace: React.FC<BatchWorkspaceProps> = ({ files, onBack })
                                         <option value="DD/MM/YYYY">DD/MM/YYYY (European)</option>
                                         <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
                                         <option value="YYYY/MM/DD">YYYY/MM/DD</option>
-                                        {isPremium && <option value="custom">Custom Format...</option>}
+                                        {isAdvancedMode && <option value="custom">Custom Format...</option>}
                                     </select>
 
                                     {/* Custom Format Input */}
-                                    {isPremium && selectedFile.options.dateFormat === 'custom' && (
+                                    {isAdvancedMode && selectedFile.options.dateFormat === 'custom' && (
                                         <div>
                                             <label className="text-xs text-muted-foreground mb-1 block">
                                                 Custom format:

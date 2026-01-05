@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Zap, ArrowRight, Crown, ArrowLeft } from 'lucide-react';
+import { Layers, ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { BatchUploader, type BatchFile } from '../components/BatchUploader';
 import { BatchWorkspace } from '../components/BatchWorkspace';
-import { useFeatureAccess } from '../hooks/useFeatureAccess';
-import { UpgradeModal } from '../components/UpgradeModal';
+import { useAppMode } from '../lib/UserTierContext';
+import { SupportButton } from '../components/SupportButton';
 
 export const BatchPage: React.FC = () => {
     const [batchFiles, setBatchFiles] = useState<BatchFile[] | null>(null);
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const { canBatchProcess } = useFeatureAccess();
+    const { setMode, isAdvancedMode } = useAppMode();
 
-    // Gate premium feature
-    if (!canBatchProcess) {
+    // Show mode switcher if not in advanced mode
+    if (!isAdvancedMode) {
         return (
             <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
                 <div className="max-w-2xl w-full bg-card border border-border rounded-2xl p-8 text-center">
@@ -20,27 +19,28 @@ export const BatchPage: React.FC = () => {
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
                     </Link>
                     <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Crown className="w-10 h-10 text-primary" />
+                        <Layers className="w-10 h-10 text-primary" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-4">Batch Processing is a Premium Feature</h1>
+                    <h1 className="text-3xl font-bold mb-4">Advanced Mode Required</h1>
                     <p className="text-muted-foreground mb-8">
-                        Process multiple CSV files at once and download them as a single ZIP archive.
-                        Upgrade to Premium for just $5/month.
+                        Batch processing and Excel export are available in Advanced mode.
+                        Switch to Advanced mode to process multiple CSV files at once.
                     </p>
                     <button
-                        onClick={() => setShowUpgradeModal(true)}
+                        onClick={() => setMode('advanced')}
                         className="px-8 py-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
                     >
-                        <Zap className="w-5 h-5" />
-                        Upgrade to Premium
-                        <ArrowRight className="w-5 h-5" />
+                        <Layers className="w-5 h-5" />
+                        Switch to Advanced Mode
                     </button>
+
+                    <div className="mt-8 pt-6 border-t border-border">
+                        <p className="text-sm text-muted-foreground mb-4">Enjoying this tool? Consider supporting development:</p>
+                        <div className="flex justify-center">
+                            <SupportButton />
+                        </div>
+                    </div>
                 </div>
-                <UpgradeModal
-                    isOpen={showUpgradeModal}
-                    onClose={() => setShowUpgradeModal(false)}
-                    reason="batch"
-                />
             </div>
         );
     }
@@ -53,11 +53,24 @@ export const BatchPage: React.FC = () => {
         <div className="min-h-screen bg-background text-foreground p-8">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Header */}
+                <div className="flex items-center justify-between">
+                    <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+                    </Link>
+                    <button
+                        onClick={() => setMode('simple')}
+                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <FileSpreadsheet className="w-4 h-4" />
+                        Switch to Simple Mode
+                    </button>
+                </div>
+
                 <div className="text-center space-y-4">
                     <div className="flex items-center justify-center gap-3">
                         <Layers className="w-10 h-10 text-primary" />
                         <h1 className="text-4xl font-bold">Batch Processing</h1>
-                        <Crown className="w-6 h-6 text-yellow-500" />
+                        <span className="px-2 py-1 text-xs font-semibold bg-primary/20 text-primary rounded-full">Advanced</span>
                     </div>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Upload multiple CSV files and process them all at once. Download the cleaned results as a single ZIP file.

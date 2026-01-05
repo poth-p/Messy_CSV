@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { CSVUploader } from './CSVUploader';
 import type { FileMetadata } from './CSVUploader';
+import { SupportButton } from './SupportButton';
 import { FileSpreadsheet, Shield, Zap, Trash2, Calendar, Scissors, AlertCircle, Layers } from 'lucide-react';
 
 interface LandingPageProps {
@@ -18,10 +19,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
                         <FileSpreadsheet className="w-6 h-6 text-primary" />
                         <span>Messy CSV Cleaner</span>
                     </div>
-                    <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
-                        <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-                        <a href="#privacy" className="hover:text-foreground transition-colors">Privacy</a>
-                        <a href="https://github.com/poth-p/Messy_CSV" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+                    <nav className="flex items-center space-x-6 text-sm font-medium text-muted-foreground">
+                        <a href="#features" className="hidden md:block hover:text-foreground transition-colors">Features</a>
+                        <a href="#privacy" className="hidden md:block hover:text-foreground transition-colors">Privacy</a>
+                        <a href="https://github.com/poth-p/Messy_CSV" target="_blank" rel="noreferrer" className="hidden md:block hover:text-foreground transition-colors">GitHub</a>
+                        <SupportButton variant="icon" />
                     </nav>
                 </div>
             </header>
@@ -44,13 +46,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
                         </p>
 
                         <div className="grid gap-4 w-full max-w-md mx-auto">
-                            <Link to="/batch" className="h-12 px-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2">
+                            <Link to="/advanced" className="h-12 px-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors flex items-center justify-center gap-2">
                                 <Layers className="w-4 h-4" />
-                                Batch Process Files (Premium)
+                                Advanced Mode: Batch Processing
                             </Link>
                         </div>
 
-                        {/* Instant Demo Placeholder */}
                         {/* Instant Demo Placeholder */}
                         <div className="mt-12 w-full max-w-4xl mx-auto">
                             <div className="bg-card rounded-xl border shadow-2xl overflow-hidden p-6 md:p-8">
@@ -92,6 +93,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
                                 description="Fill empty cells with defaults, flag them, or remove incomplete rows entirely."
                             />
                         </div>
+
+                        {/* Mode Explanation */}
+                        <div className="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                            <div className="bg-card p-6 rounded-xl border">
+                                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                                    <FileSpreadsheet className="w-5 h-5 text-primary" />
+                                    Simple Mode
+                                </h3>
+                                <p className="text-muted-foreground text-sm">
+                                    Upload a single CSV file and clean it instantly. Perfect for quick, one-off data fixes.
+                                </p>
+                            </div>
+                            <div className="bg-card p-6 rounded-xl border">
+                                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                                    <Layers className="w-5 h-5 text-primary" />
+                                    Advanced Mode
+                                </h3>
+                                <p className="text-muted-foreground text-sm">
+                                    Batch process multiple files at once, export to Excel, and download as a ZIP archive.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -124,13 +147,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onDataparsed }) => {
             <footer className="py-8 border-t border-border bg-background">
                 <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
                     <p>© {new Date().getFullYear()} Messy CSV Cleaner. All rights reserved.</p>
-                    <div className="flex gap-6 mt-4 md:mt-0">
+                    <div className="flex items-center gap-6 mt-4 md:mt-0">
                         <Link to="/privacy" className="hover:text-foreground transition-colors">
                             Privacy Policy
                         </Link>
                         <Link to="/terms" className="hover:text-foreground transition-colors">
                             Terms of Service
                         </Link>
+                        <SupportButton />
                     </div>
                 </div>
             </footer>
