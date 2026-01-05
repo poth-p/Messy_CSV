@@ -150,7 +150,7 @@ export const BatchUploader: React.FC<BatchUploaderProps> = ({ onFilesReady }) =>
                     Drag & drop or click to select up to {MAX_BATCH_SIZE} files
                 </p>
                 <p className="text-xs text-muted-foreground">
-                    Batch processing is a Premium feature
+                    Batch processing is an Advanced Mode feature
                 </p>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Layers, ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { BatchUploader, type BatchFile } from '../components/BatchUploader';
 import { BatchWorkspace } from '../components/BatchWorkspace';
@@ -9,6 +9,12 @@ import { SupportButton } from '../components/SupportButton';
 export const BatchPage: React.FC = () => {
     const [batchFiles, setBatchFiles] = useState<BatchFile[] | null>(null);
     const { setMode, isAdvancedMode } = useAppMode();
+    const navigate = useNavigate();
+
+    const handleSwitchToSimple = () => {
+        setMode('simple');
+        navigate('/');
+    };
 
     // Show mode switcher if not in advanced mode
     if (!isAdvancedMode) {
@@ -58,7 +64,7 @@ export const BatchPage: React.FC = () => {
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
                     </Link>
                     <button
-                        onClick={() => setMode('simple')}
+                        onClick={handleSwitchToSimple}
                         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <FileSpreadsheet className="w-4 h-4" />
