@@ -25,8 +25,8 @@ export function sanitizeDataForExcel(data: any[]): any[] {
                 // Simplest consistent fix is strictly =, +, @. 
                 // User showed +1-555... becoming a formula.
 
-                // If it starts with +, =, @, prepend '
-                if (/^[+=@]/.test(val)) {
+                // If it starts with +, =, @, or - (formula triggers), prepend '
+                if (/^[+=@-]/.test(val)) {
                     newRow[key] = `'${val}`;
                 } else {
                     newRow[key] = val;
